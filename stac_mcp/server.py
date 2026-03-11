@@ -110,33 +110,13 @@ async def search_items(
 
 
 @app.tool
-async def estimate_data_size(
-    collections: list[str] | str,
-    bbox: list[float] | str | None = None,
-    datetime: str | None = None,
-    query: dict[str, Any] | str | None = None,
-    aoi_geojson: dict[str, Any] | str | None = None,
-    limit: int | None = 10,
-    force_metadata_only: bool | None = False,
-    output_format: str | None = "text",
+async def list_collection_keywords(
     catalog_url: str | None = None,
 ) -> list[dict[str, Any]]:
-    """Estimate the data size for a STAC query."""
-    arguments = preprocess_parameters(
-        {
-            "collections": collections,
-            "bbox": bbox,
-            "datetime": datetime,
-            "query": query,
-            "aoi_geojson": aoi_geojson,
-            "limit": limit,
-            "force_metadata_only": force_metadata_only,
-            "output_format": output_format,
-        }
-    )
+    """Return a lightweight mapping of collection IDs to their keywords or description summary. Use this to quickly identify which collections match a user's needs without fetching full metadata."""
     return await execution.execute_tool(
-        "estimate_data_size",
-        arguments=arguments,
+        "list_collection_keywords",
+        arguments={},
         catalog_url=catalog_url,
         headers=None,
     )
@@ -178,12 +158,3 @@ async def get_aggregations(
     )
 
 
-@app.tool
-async def get_sensor_registry_info() -> list[dict[str, Any]]:
-    """Get information about the STAC sensor registry."""
-    return await execution.execute_tool(
-        "sensor_registry_info",
-        arguments={},
-        catalog_url=None,
-        headers=None,
-    )

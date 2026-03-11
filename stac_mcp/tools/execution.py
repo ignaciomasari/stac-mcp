@@ -17,16 +17,15 @@ from mcp.types import TextContent
 
 from stac_mcp.observability import instrument_tool_execution, record_tool_result_size
 from stac_mcp.tools.client import STACClient
-from stac_mcp.tools.estimate_data_size import handle_estimate_data_size
 from stac_mcp.tools.get_aggregations import handle_get_aggregations
 from stac_mcp.tools.get_collection import handle_get_collection
 from stac_mcp.tools.get_conformance import handle_get_conformance
 from stac_mcp.tools.get_item import handle_get_item
 from stac_mcp.tools.get_queryables import handle_get_queryables
 from stac_mcp.tools.get_root import handle_get_root
+from stac_mcp.tools.list_collection_keywords import handle_list_collection_keywords
 from stac_mcp.tools.search_collections import handle_search_collections
 from stac_mcp.tools.search_items import handle_search_items
-from stac_mcp.tools.sensor_dtypes import handle_sensor_registry_info
 
 logger = logging.getLogger(__name__)
 
@@ -58,12 +57,11 @@ _TOOL_HANDLERS: dict[str, Handler] = {
     "get_collection": handle_get_collection,
     "search_items": handle_search_items,
     "get_item": handle_get_item,
-    "estimate_data_size": handle_estimate_data_size,
     "get_root": handle_get_root,
     "get_conformance": handle_get_conformance,
     "get_queryables": handle_get_queryables,
     "get_aggregations": handle_get_aggregations,
-    "sensor_registry_info": handle_sensor_registry_info,
+    "list_collection_keywords": handle_list_collection_keywords,
 }
 
 

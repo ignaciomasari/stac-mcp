@@ -11,34 +11,11 @@ from tests import ARG_LIMIT_FIVE, ARG_LIMIT_TWO
 
 
 async def call_tool(tool, *a, **kw):
-    # fastmcp's @app.tool wraps the function in a tool object. The original
-    # coroutine is often available on an attribute; try common names first.
-    candidates = [
-        getattr(tool, "func", None),
-        getattr(tool, "__wrapped__", None),
-        getattr(tool, "fn", None),
-        getattr(tool, "function", None),
-    ]
-    for fn in candidates:
-        if fn and callable(fn):
-            coro = fn(*a, **kw)
-            if asyncio.iscoroutine(coro):
-                return await coro
-            return coro
-
-    # As a fallback, scan attributes for a callable defined in this module
-    for name in dir(tool):
-        try:
-            attr = getattr(tool, name)
-        except AttributeError:
-            continue
-        if callable(attr) and getattr(attr, "__module__", None) == "stac_mcp.server":
-            coro = attr(*a, **kw)
-            if asyncio.iscoroutine(coro):
-                return await coro
-            return coro
-    err_msg = "Could not find wrapped function on tool object"
-    raise TypeError(err_msg)
+    # In FastMCP 3.x, @app.tool returns the original function unchanged.
+    coro = tool(*a, **kw)
+    if asyncio.iscoroutine(coro):
+        return await coro
+    return coro
 
 
 def test_tool_introspection():
@@ -125,9 +102,9 @@ async def test_get_and_search_items_variants(monkeypatch):
 @pytest.fixture
 def test_app():
     """Return a clean app for each test."""
-    original_tools = app._tool_manager._tools.copy()  # noqa: SLF001
+    original_components = app._local_provider._components.copy()  # noqa: SLF001
     yield app
-    app._tool_manager._tools = original_tools  # noqa: SLF001
+    app._local_provider._components = original_components  # noqa: SLF001
 
 
 @pytest.mark.asyncio
@@ -198,32 +175,21 @@ async def test_call_search_items_tool(test_app):
 
 
 @pytest.mark.asyncio
-async def test_call_estimate_data_size_tool(test_app):
-    """Test calling the estimate_data_size tool with arguments."""
+async def test_call_list_collection_keywords_tool(test_app):
+    """Test calling the list_collection_keywords tool."""
 
-    def dummy_estimate_data_size(
-        collections: list[str],
-        bbox: list[float] | None = None,  # noqa: ARG001
-        datetime: str | None = None,  # noqa: ARG001
-        query: dict[str, Any] | None = None,  # noqa: ARG001
-        aoi_geojson: dict[str, Any] | None = None,  # noqa: ARG001
-        limit: int | None = 10,  # noqa: ARG001
-        force_metadata_only: bool | None = False,  # noqa: ARG001
-        output_format: str | None = "text",  # noqa: ARG001
+    def dummy_list_collection_keywords(
         catalog_url: str | None = None,  # noqa: ARG001
     ) -> list[dict[str, Any]]:
-        assert collections == ["test-collection"]
-        return [{"type": "text", "text": "mocked estimate response"}]
+        return [{"type": "text", "text": "mocked keywords response"}]
 
-    test_app.tool(name="estimate_data_size")(dummy_estimate_data_size)
+    test_app.tool(name="list_collection_keywords")(dummy_list_collection_keywords)
 
     client = Client(test_app)
     async with client:
-        result = await client.call_tool(
-            "estimate_data_size", {"collections": ["test-collection"]}
-        )
+        result = await client.call_tool("list_collection_keywords")
         response_data = json.loads(result.content[0].text)
-        assert response_data == [{"type": "text", "text": "mocked estimate response"}]
+        assert response_data == [{"type": "text", "text": "mocked keywords response"}]
 
 
 @pytest.mark.asyncio

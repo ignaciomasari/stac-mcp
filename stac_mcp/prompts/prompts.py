@@ -16,7 +16,16 @@ from __future__ import annotations
 import json
 from typing import Any
 
-from fastmcp.prompts.prompt import PromptMessage, TextContent
+from fastmcp.prompts.prompt import Message, PromptResult
+
+
+def _make_result(human: str, payload: dict, description: str = "") -> PromptResult:
+    """Build a PromptResult with machine_payload in meta."""
+    return PromptResult(
+        messages=[Message(human, role="user")],
+        description=description,
+        meta={"machine_payload": payload},
+    )
 
 
 def register_prompts(app: Any) -> None:
@@ -24,43 +33,15 @@ def register_prompts(app: Any) -> None:
     _common_required = ["collections", "datetime", "bbox", "limit"]
 
     @app.prompt(
-        name="sensor_registry_info_prompt",
-        description="Information about the STAC sensor registry",
-        meta={},
-    )
-    def _prompt_sensor_registry_info() -> PromptMessage:
-        human = (
-            "The internal STAC sensor registry maps collection ids to native "
-            "dtypes and provider-specific aliases. Use it as a fallback "
-            "when a collection id cannot be found by searching the target "
-            "catalog. It is not exhaustive; always confirm with "
-            "search_collections or get_collection when available."
-        )
-        payload = {
-            "name": "sensor_registry_info",
-            "description": (
-                "Return the internal sensor registry mapping of collection ids "
-                "to dtype info."
-            ),
-            "parameters": {"type": "object", "properties": {}, "required": []},
-            "example": {},
-        }
-        return PromptMessage(
-            role="user",
-            content=TextContent(type="text", text=human),
-            _meta={"machine_payload": payload},
-        )
-
-    @app.prompt(
         name="stac_tool_overview_prompt",
         description="Overview of STAC tools available",
         meta={},
     )
-    def _prompt_stac_tool_overview() -> PromptMessage:
+    def _prompt_stac_tool_overview() -> PromptResult:
         human = (
             "Available STAC tools: get_root, get_conformance, search_collections, "
-            "get_collection, get_queryables, search_items, get_item, and "
-            "estimate_data_size."
+            "get_collection, get_queryables, search_items, get_item, "
+            "get_aggregations, and list_collection_keywords."
         )
         payload = {
             "name": "stac_tool_overview",
@@ -68,11 +49,7 @@ def register_prompts(app: Any) -> None:
             "parameters": {},
             "example": {},
         }
-        return PromptMessage(
-            role="user",
-            content=TextContent(type="text", text=human),
-            _meta={"machine_payload": payload},
-        )
+        return _make_result(human, payload, "Overview of STAC tools available")
 
     @app.prompt(
         name="tool_get_root_prompt",
@@ -82,7 +59,7 @@ def register_prompts(app: Any) -> None:
             "example": {},
         },
     )
-    def _prompt_get_root() -> PromptMessage:
+    def _prompt_get_root() -> PromptResult:
         schema = {"type": "object", "properties": {}, "required": []}
         payload = {
             "name": "get_root",
@@ -97,11 +74,7 @@ def register_prompts(app: Any) -> None:
             "Example:\n"
             f"{json.dumps(payload['example'], indent=2)}"
         )
-        return PromptMessage(
-            role="user",
-            content=TextContent(type="text", text=human),
-            _meta={"machine_payload": payload},
-        )
+        return _make_result(human, payload, "Usage for get_root tool")
 
     @app.prompt(
         name="tool_get_conformance_prompt",
@@ -111,7 +84,7 @@ def register_prompts(app: Any) -> None:
             "example": {},
         },
     )
-    def _prompt_get_conformance() -> PromptMessage:
+    def _prompt_get_conformance() -> PromptResult:
         schema = {"type": "object", "properties": {}, "required": []}
         payload = {
             "name": "get_conformance",
@@ -126,11 +99,7 @@ def register_prompts(app: Any) -> None:
             "Example:\n"
             f"{json.dumps(payload['example'], indent=2)}"
         )
-        return PromptMessage(
-            role="user",
-            content=TextContent(type="text", text=human),
-            _meta={"machine_payload": payload},
-        )
+        return _make_result(human, payload, "Usage for get_conformance tool")
 
     @app.prompt(
         name="tool_search_collections_prompt",
@@ -147,7 +116,7 @@ def register_prompts(app: Any) -> None:
             "example": {"limit": 5},
         },
     )
-    def _prompt_search_collections() -> PromptMessage:
+    def _prompt_search_collections() -> PromptResult:
         schema = {
             "type": "object",
             "properties": {
@@ -169,11 +138,7 @@ def register_prompts(app: Any) -> None:
             "Example:\n"
             f"{json.dumps(payload['example'], indent=2)}"
         )
-        return PromptMessage(
-            role="user",
-            content=TextContent(type="text", text=human),
-            _meta={"machine_payload": payload},
-        )
+        return _make_result(human, payload, "Usage for search_collections tool")
 
     @app.prompt(
         name="tool_get_collection_prompt",
@@ -190,7 +155,7 @@ def register_prompts(app: Any) -> None:
             "example": {"collection_id": "my-collection"},
         },
     )
-    def _prompt_get_collection() -> PromptMessage:
+    def _prompt_get_collection() -> PromptResult:
         schema = {
             "type": "object",
             "properties": {
@@ -212,11 +177,7 @@ def register_prompts(app: Any) -> None:
             "Example:\n"
             f"{json.dumps(payload['example'], indent=2)}"
         )
-        return PromptMessage(
-            role="user",
-            content=TextContent(type="text", text=human),
-            _meta={"machine_payload": payload},
-        )
+        return _make_result(human, payload, "Usage for get_collection tool")
 
     @app.prompt(
         name="tool_get_item_prompt",
@@ -243,7 +204,7 @@ def register_prompts(app: Any) -> None:
             },
         },
     )
-    def _prompt_get_item() -> PromptMessage:
+    def _prompt_get_item() -> PromptResult:
         schema = {
             "type": "object",
             "properties": {
@@ -275,11 +236,7 @@ def register_prompts(app: Any) -> None:
             "Example:\n"
             f"{json.dumps(payload['example'], indent=2)}"
         )
-        return PromptMessage(
-            role="user",
-            content=TextContent(type="text", text=human),
-            _meta={"machine_payload": payload},
-        )
+        return _make_result(human, payload, "Usage for get_item tool")
 
     @app.prompt(
         name="tool_search_items_prompt",
@@ -309,7 +266,7 @@ def register_prompts(app: Any) -> None:
             "example": {"collections": ["c1"], "limit": 3},
         },
     )
-    def _prompt_search_items() -> PromptMessage:
+    def _prompt_search_items() -> PromptResult:
         schema = {
             "type": "object",
             "properties": {
@@ -362,89 +319,50 @@ def register_prompts(app: Any) -> None:
             "If 'query' is provided, ensure it conforms to the STAC API "
             "filter specification."
         )
-        return PromptMessage(
-            role="user",
-            content=TextContent(type="text", text=human),
-            _meta={"machine_payload": payload},
-        )
+        return _make_result(human, payload, "Usage for search_items tool")
 
     @app.prompt(
-        name="tool_estimate_data_size_prompt",
-        description="Usage for estimate_data_size tool",
+        name="tool_list_collection_keywords_prompt",
+        description="Usage for list_collection_keywords tool",
         meta={
             "schema": {
                 "type": "object",
                 "properties": {
-                    "collections": {"type": "array", "items": {"type": "string"}},
-                    "bbox": {
-                        "type": "array",
-                        "items": {"type": "number"},
-                        "minItems": 4,
-                        "maxItems": 4,
-                    },
-                    "datetime": {"type": "string"},
-                    "query": {"type": "object"},
-                    "aoi_geojson": {"type": "object"},
-                    "limit": {"type": "integer", "default": 10},
-                    "force_metadata_only": {"type": "boolean", "default": False},
-                    "output_format": {
-                        "type": "string",
-                        "enum": ["text", "json"],
-                        "default": "text",
-                    },
+                    "catalog_url": {"type": "string"},
                 },
-                "required": _common_required,
+                "required": [],
             },
-            "example": {"collections": ["c1"], "limit": 10, "output_format": "json"},
+            "example": {},
         },
     )
-    def _prompt_estimate_data_size() -> PromptMessage:
+    def _prompt_list_collection_keywords() -> PromptResult:
         schema = {
             "type": "object",
             "properties": {
-                "collections": {"type": "array", "items": {"type": "string"}},
-                "bbox": {
-                    "type": "array",
-                    "items": {"type": "number"},
-                    "minItems": 4,
-                    "maxItems": 4,
-                },
-                "datetime": {"type": "string"},
-                "query": {"type": "object"},
-                "aoi_geojson": {"type": "object"},
-                "limit": {"type": "integer", "default": 100},
-                "force_metadata_only": {"type": "boolean", "default": False},
-                "output_format": {
-                    "type": "string",
-                    "enum": ["text", "json"],
-                    "default": "text",
-                },
+                "catalog_url": {"type": "string"},
             },
-            "required": _common_required,
+            "required": [],
         }
         payload = {
-            "name": "estimate_data_size",
-            "description": "Estimate data size for a STAC query.",
+            "name": "list_collection_keywords",
+            "description": (
+                "Return a lightweight mapping of collection IDs to their "
+                "keywords or description summary."
+            ),
             "parameters": schema,
-            "example": {"collections": ["c1"], "limit": 10, "output_format": "json"},
+            "example": {},
         }
         human = (
-            f"This tool should be run only after search_items has been used to "
-            "validate collection IDs and sampling parameters.\n\n"
-            f"Tool: estimate_data_size\nDescription: {payload['description']}\n\n"
+            f"Tool: list_collection_keywords\n"
+            f"Description: {payload['description']}\n\n"
             "Parameters:\n"
             f"{json.dumps(schema, indent=2)}\n\n"
-            "Note: The response may include 'reported_bytes' and 'registry_bytes'\n"
-            "for per-variable estimates. Prefer 'registry_bytes' when a sensor "
-            "registry provides an instrument-native dtype.\n\n"
+            "Use this tool first to identify which collections are relevant "
+            "to the user's query without fetching full metadata.\n\n"
             "Example:\n"
             f"{json.dumps(payload['example'], indent=2)}"
         )
-        return PromptMessage(
-            role="user",
-            content=TextContent(type="text", text=human),
-            _meta={"machine_payload": payload},
-        )
+        return _make_result(human, payload, "Usage for list_collection_keywords tool")
 
     @app.prompt(
         name="tool_get_queryables_prompt",
@@ -461,7 +379,7 @@ def register_prompts(app: Any) -> None:
             "example": {"collection_id": "my-collection"},
         },
     )
-    def _prompt_get_queryables() -> PromptMessage:
+    def _prompt_get_queryables() -> PromptResult:
         schema = {
             "type": "object",
             "properties": {
@@ -483,11 +401,7 @@ def register_prompts(app: Any) -> None:
             "Example:\n"
             f"{json.dumps(payload['example'], indent=2)}"
         )
-        return PromptMessage(
-            role="user",
-            content=TextContent(type="text", text=human),
-            _meta={"machine_payload": payload},
-        )
+        return _make_result(human, payload, "Usage for get_queryables tool")
 
     @app.prompt(
         name="tool_get_aggregations_prompt",
@@ -512,7 +426,7 @@ def register_prompts(app: Any) -> None:
             "example": {"collections": ["c1"], "datetime": "2020-01-01/2020-12-31"},
         },
     )
-    def _prompt_get_aggregations() -> PromptMessage:
+    def _prompt_get_aggregations() -> PromptResult:
         schema = {
             "type": "object",
             "properties": {
@@ -542,23 +456,19 @@ def register_prompts(app: Any) -> None:
             "Example:\n"
             f"{json.dumps(payload['example'], indent=2)}"
         )
-        return PromptMessage(
-            role="user",
-            content=TextContent(type="text", text=human),
-            _meta={"machine_payload": payload},
-        )
+        return _make_result(human, payload, "Usage for get_aggregations tool")
 
     @app.prompt(
         name="tool_ordering_info_prompt",
         description="Information on tool ordering and usage",
         meta={},
     )
-    def _prompt_tool_ordering_info() -> PromptMessage:
+    def _prompt_tool_ordering_info() -> PromptResult:
         human = (
-            "Preferred order: get_root -> get_conformance -> search_collections -> "
-            "get_collection -> get_queryables -> search_items -> get_item -> "
-            "estimate_data_size. Use caching and sampling (limit) when "
-            "estimating."
+            "Preferred order: list_collection_keywords (to identify relevant "
+            "collections) -> get_root -> get_conformance -> search_collections -> "
+            "get_collection -> get_queryables -> search_items -> get_item. "
+            "Use caching and sampling (limit) to control response size."
         )
         payload = {
             "name": "tool_ordering_info",
@@ -566,18 +476,14 @@ def register_prompts(app: Any) -> None:
             "parameters": {},
             "example": {},
         }
-        return PromptMessage(
-            role="user",
-            content=TextContent(type="text", text=human),
-            _meta={"machine_payload": payload},
-        )
+        return _make_result(human, payload, "Tool ordering information")
 
     @app.prompt(
         name="catalog_discovery_prompt",
         description="Steps to discover what a STAC catalog supports",
         meta={},
     )
-    def _prompt_catalog_discovery() -> PromptMessage:
+    def _prompt_catalog_discovery() -> PromptResult:
         human = (
             "Discovery steps:\n"
             "1) Call get_root to locate the catalog root and entrypoints.\n"
@@ -600,28 +506,24 @@ def register_prompts(app: Any) -> None:
             "parameters": {},
             "example": {},
         }
-        return PromptMessage(
-            role="user",
-            content=TextContent(type="text", text=human),
-            _meta={"machine_payload": payload},
-        )
+        return _make_result(human, payload, "Catalog discovery steps")
 
     @app.prompt(
         name="collection_alias_resolution_prompt",
         description="How to resolve collection id aliases across catalogs",
         meta={},
     )
-    def _prompt_collection_alias_resolution() -> PromptMessage:
+    def _prompt_collection_alias_resolution() -> PromptResult:
         human = (
             "Alias resolution strategy:\n"
             "1) When a collection ID lookup returns no result, normalize case "
             "and punctuation.\n"
             "2) Try provider-specific aliases (for example: 'sentinel-2-l2a' "
             "vs 'sentinel-2-c1-l2a').\n"
-            "3) For each candidate alias call get_collection to verify presence "
-            "and canonical metadata.\n"
-            "4) If still unresolved, call the sensor_registry_info tool as a "
-            "fallback to map known aliases.\n\n"
+            "3) Use list_collection_keywords to scan available collections by "
+            "keyword.\n"
+            "4) For each candidate alias call get_collection to verify presence "
+            "and canonical metadata.\n\n"
             "Parameters:\n"
             "- collection_id: string (optional)\n\n"
             "Example:\n"
@@ -633,45 +535,7 @@ def register_prompts(app: Any) -> None:
             "parameters": {},
             "example": {},
         }
-        return PromptMessage(
-            role="user",
-            content=TextContent(type="text", text=human),
-            _meta={"machine_payload": payload},
-        )
-
-    @app.prompt(
-        name="estimate_size_strategy_prompt",
-        description="Safe strategies for estimating data size at scale",
-        meta={},
-    )
-    def _prompt_estimate_size_strategy() -> PromptMessage:
-        human = (
-            "Estimation strategy:\n"
-            "1) Sample a modest number of items (N=10-100) across the "
-            "requested timeframe.\n"
-            "2) Prefer 'registry_bytes' when the sensor registry provides an "
-            "instrument-native dtype.\n"
-            "3) Aggregate per-band sizes and scale by item counts; persist "
-            "detailed per-sample results as fixtures.\n"
-            "4) Avoid downloading full assets; use metadata-only measurements "
-            "whenever possible.\n\n"
-            "Parameters:\n"
-            "- collections: list[string]\n"
-            "- limit: integer (samples per collection)\n\n"
-            "Example:\n"
-            '{"collections": ["sentinel-2-l2a"], "limit": 20}\n'
-        )
-        payload = {
-            "name": "estimate_size_strategy",
-            "description": "Guidance for safely estimating dataset sizes",
-            "parameters": {},
-            "example": {},
-        }
-        return PromptMessage(
-            role="user",
-            content=TextContent(type="text", text=human),
-            _meta={"machine_payload": payload},
-        )
+        return _make_result(human, payload, "Collection alias resolution")
 
     @app.prompt(
         name="explain_tool_output_prompt",
@@ -688,7 +552,7 @@ def register_prompts(app: Any) -> None:
             "example": {"tool": "get_collection", "payload": {}},
         },
     )
-    def _prompt_explain_tool_output() -> PromptMessage:
+    def _prompt_explain_tool_output() -> PromptResult:
         schema = {
             "type": "object",
             "properties": {"tool": {"type": "string"}, "payload": {"type": "object"}},
@@ -712,8 +576,4 @@ def register_prompts(app: Any) -> None:
             "Example:\n"
             '{"tool": "get_collection", "payload": {}}\n'
         )
-        return PromptMessage(
-            role="user",
-            content=TextContent(type="text", text=human),
-            _meta={"machine_payload": payload},
-        )
+        return _make_result(human, payload, "Explain tool output")

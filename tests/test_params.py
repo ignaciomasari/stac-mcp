@@ -52,32 +52,6 @@ def test_collections_as_list():
     assert result["collections"] == ["sentinel-2-l2a", "landsat-c2-l2"]
 
 
-def test_aoi_geojson_as_string():
-    """Test that aoi_geojson as JSON string is converted to dict."""
-    coords = [[[-123, 49], [-122, 49], [-122, 50], [-123, 50], [-123, 49]]]
-    geom = {"type": "Polygon", "coordinates": coords}
-    aoi_str = json.dumps(geom)
-    args = {"aoi_geojson": aoi_str}
-    result = preprocess_parameters(args)
-    assert isinstance(result["aoi_geojson"], dict)
-    assert result["aoi_geojson"]["type"] == "Polygon"
-
-
-def test_aoi_geojson_as_dict():
-    """Test that aoi_geojson as dict is preserved."""
-    args = {
-        "aoi_geojson": {
-            "type": "Polygon",
-            "coordinates": [
-                [[-123, 49], [-122, 49], [-122, 50], [-123, 50], [-123, 49]]
-            ],
-        }
-    }
-    result = preprocess_parameters(args)
-    assert isinstance(result["aoi_geojson"], dict)
-    assert result["aoi_geojson"]["type"] == "Polygon"
-
-
 def test_query_as_string():
     """Test that query as JSON string is converted to dict."""
     args = {"query": '{"eo:cloud_cover": {"lt": 10}}'}

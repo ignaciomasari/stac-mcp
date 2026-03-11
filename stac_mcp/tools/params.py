@@ -57,20 +57,6 @@ def preprocess_parameters(arguments: dict[str, Any]) -> dict[str, Any]:
                     "Failed to parse collections string: %s, error: %s", collections, e
                 )
 
-    # Handle aoi_geojson parameter - should be a dict/object
-    if "aoi_geojson" in processed and processed["aoi_geojson"] is not None:
-        aoi = processed["aoi_geojson"]
-        if isinstance(aoi, str):
-            try:
-                parsed = json.loads(aoi)
-                if isinstance(parsed, dict):
-                    processed["aoi_geojson"] = parsed
-                    logger.debug("Converted aoi_geojson from string to dict")
-            except (json.JSONDecodeError, ValueError, TypeError) as e:
-                logger.warning(
-                    "Failed to parse aoi_geojson string: %s, error: %s", aoi, e
-                )
-
     # Handle query parameter - should be a dict/object
     if "query" in processed and processed["query"] is not None:
         query = processed["query"]

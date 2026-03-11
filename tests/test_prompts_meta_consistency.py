@@ -7,26 +7,24 @@ from stac_mcp.server import app
 @pytest.fixture
 def test_app():
     """Return a clean app for each test."""
-    original_tools = app._tool_manager._tools.copy()  # noqa: SLF001
+    original_components = app._local_provider._components.copy()  # noqa: SLF001
     yield app
-    app._tool_manager._tools = original_tools  # noqa: SLF001
+    app._local_provider._components = original_components  # noqa: SLF001
 
 
 @pytest.mark.asyncio
 async def test_get_prompt_messages_include_machine_payload_for_all_prompts(test_app):
-    """For each registered prompt, get_prompt() returns a PromptMessage with
-    `_meta['machine_payload']` available so agents may call tools programmatically.
+    """For each registered prompt, get_prompt() returns a PromptResult with
+    `meta['machine_payload']` available so agents may call tools programmatically.
     """
     client = Client(test_app)
     async with client:
         prompts = await client.list_prompts()
 
-        # Collect prompt names
         names = [getattr(p, "name", None) for p in prompts]
 
         assert len(names) > 0
 
-        # Ensure each prompt's rendered message includes _meta.machine_payload
         for name in names:
             if not name:
                 continue
@@ -35,14 +33,13 @@ async def test_get_prompt_messages_include_machine_payload_for_all_prompts(test_
             assert len(result.messages) > 0, (
                 f"get_prompt({name}) returned empty .messages"
             )
-            msg = result.messages[0]
-            # PromptMessage should expose machine_payload on either `_meta` or `meta`
-            machine_meta = getattr(msg, "_meta", None) or getattr(msg, "meta", None)
-            assert machine_meta is not None, (
-                f"Prompt {name} did not include _meta or meta"
+            # In FastMCP 3.x, meta is on the PromptResult, not individual messages
+            result_meta = getattr(result, "meta", None)
+            assert result_meta is not None, (
+                f"Prompt {name} did not include meta on result"
             )
-            assert "machine_payload" in machine_meta, (
-                f"Prompt {name} missing machine_payload in _meta/meta"
+            assert "machine_payload" in result_meta, (
+                f"Prompt {name} missing machine_payload in meta"
             )
 
 
