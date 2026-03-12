@@ -221,29 +221,32 @@ The version system maintains consistency across:
 - `stac_mcp/__init__.py` (__version__)
 - `stac_mcp/server.py` (server_version in MCP initialization)
 
-### Container Development
+### Container Development & VM Deployment
 
-To develop with containers:
+The container defaults to **HTTP transport** on port 8000 for VM/server deployment:
 
 ```bash
-# Build development image
+# Build the image
 docker build -f Containerfile -t stac-mcp:dev .
 
-# Test the container
-docker run --rm -i stac-mcp:dev
+# Run with HTTP transport (default) - MCP clients connect to http://<host>:8000/mcp
+docker run -d -p 8000:8000 stac-mcp:dev
 
-# Using docker-compose for development
-docker-compose up --build
-
-# For debugging, use an interactive shell (requires modifying Containerfile)
-# docker run --rm -it --entrypoint=/bin/sh stac-mcp:dev
+# Or use docker-compose
+docker compose up --build -d
 ```
 
-Current Containerfile (single-stage) notes:
+For **stdio transport** (e.g. MCP clients that spawn the process):
+
+```bash
+docker run --rm -i stac-mcp:dev --transport stdio
+```
+
+Current Containerfile notes:
 - Based on `python:3.12-slim` for broad wheel compatibility (rasterio, shapely, etc.)
-- Installs GDAL/PROJ system libraries needed by rasterio/odc-stac
-- Installs the package with `pip install .`
-- Entrypoint: `python -m stac_mcp.server` (stdio MCP transport)
+- Uses `uv` for fast, reproducible dependency installation
+- Entrypoint: `python -m stac_mcp` with default CMD: `--transport http --host 0.0.0.0 --port 8000`
+- Override CMD for stdio: `--transport stdio`
 - Multi-stage/distroless hardening can be reintroduced later (tracked by potential future ADR)
 
 ## Documentation

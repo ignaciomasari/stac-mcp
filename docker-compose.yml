@@ -1,3 +1,6 @@
+# STAC MCP Server - Docker Compose for VM deployment
+# Runs the MCP server with HTTP transport on port 8000.
+# MCP clients can connect to http://<host>:8000
 version: '3.8'
 
 services:
@@ -5,29 +8,22 @@ services:
     build:
       context: .
       dockerfile: Containerfile
-    # For direct interaction via stdin/stdout
-    stdin_open: true
-    tty: true
-    # Alternatively, for production use:
-    # image: ghcr.io/bnjam/stac-mcp:latest
-    
-    # Container runs as non-root user by default
-    # No ports exposed - uses stdio transport
-    
-    # Optional: Add environment variables for configuration
-    # environment:
-    #   - PYTHONUNBUFFERED=1
-    
-    # Optional: Add volume mounts for logs or configuration
-    # volumes:
-    #   - ./logs:/app/logs:rw
-    
+    # HTTP transport: expose port 8000 for MCP clients
+    ports:
+      - "8000:8000"
+    # Bind to 0.0.0.0 inside container (already set in Containerfile CMD)
+    # For stdio transport instead, override command:
+    # command: ["--transport", "stdio"]
+    # stdin_open: true
+    # tty: true
+    environment:
+      - PYTHONUNBUFFERED=1
     # Resource limits for production deployment
     deploy:
       resources:
         limits:
-          memory: 256M
-          cpus: '0.5'
+          memory: 512M
+          cpus: '1.0'
         reservations:
-          memory: 128M
+          memory: 256M
           cpus: '0.25'

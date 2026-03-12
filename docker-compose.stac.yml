@@ -1,3 +1,9 @@
+# Optional: PostGIS + STAC FastAPI backend for integration tests.
+# Use this when you need a local STAC catalog to point the MCP server at.
+# The STAC MCP server (from docker-compose.yml) can query this API via catalog_url.
+#
+# Start: docker compose -f docker-compose.stac.yml up -d
+# STAC API: http://localhost:8080
 version: "3.8"
 services:
   postgis:
