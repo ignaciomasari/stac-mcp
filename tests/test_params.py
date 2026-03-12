@@ -52,32 +52,6 @@ def test_collections_as_list():
     assert result["collections"] == ["sentinel-2-l2a", "landsat-c2-l2"]
 
 
-def test_aoi_geojson_as_string():
-    """Test that aoi_geojson as JSON string is converted to dict."""
-    coords = [[[-123, 49], [-122, 49], [-122, 50], [-123, 50], [-123, 49]]]
-    geom = {"type": "Polygon", "coordinates": coords}
-    aoi_str = json.dumps(geom)
-    args = {"aoi_geojson": aoi_str}
-    result = preprocess_parameters(args)
-    assert isinstance(result["aoi_geojson"], dict)
-    assert result["aoi_geojson"]["type"] == "Polygon"
-
-
-def test_aoi_geojson_as_dict():
-    """Test that aoi_geojson as dict is preserved."""
-    args = {
-        "aoi_geojson": {
-            "type": "Polygon",
-            "coordinates": [
-                [[-123, 49], [-122, 49], [-122, 50], [-123, 50], [-123, 49]]
-            ],
-        }
-    }
-    result = preprocess_parameters(args)
-    assert isinstance(result["aoi_geojson"], dict)
-    assert result["aoi_geojson"]["type"] == "Polygon"
-
-
 def test_query_as_string():
     """Test that query as JSON string is converted to dict."""
     args = {"query": '{"eo:cloud_cover": {"lt": 10}}'}
@@ -129,3 +103,35 @@ def test_mixed_parameters():
     assert isinstance(result["query"], dict)
     assert result["datetime"] == "2025-01-01/2025-01-31"
     assert result["limit"] == 10  # noqa: PLR2004
+
+
+def test_bbox_as_comma_separated_string():
+    """Test that bbox as comma-separated string (not JSON) is converted to list."""
+    args = {"bbox": "15.3626,47.0284,15.6321,47.1101"}
+    result = preprocess_parameters(args)
+    assert result["bbox"] == [15.3626, 47.0284, 15.6321, 47.1101]
+    assert isinstance(result["bbox"], list)
+    assert all(isinstance(x, float) for x in result["bbox"])
+
+
+def test_bbox_as_comma_separated_string_with_spaces():
+    """Test that bbox as comma-separated string with spaces is handled."""
+    args = {"bbox": "15.3626, 47.0284, 15.6321, 47.1101"}
+    result = preprocess_parameters(args)
+    assert result["bbox"] == [15.3626, 47.0284, 15.6321, 47.1101]
+
+
+def test_collections_as_plain_string():
+    """Test that a single collection name string is wrapped in a list."""
+    args = {"collections": "sentinel-2-l2a"}
+    result = preprocess_parameters(args)
+    assert result["collections"] == ["sentinel-2-l2a"]
+    assert isinstance(result["collections"], list)
+
+
+def test_collections_as_comma_separated_string():
+    """Test that comma-separated collection names are split into a list."""
+    args = {"collections": "sentinel-2-l2a, landsat-c2-l2"}
+    result = preprocess_parameters(args)
+    assert result["collections"] == ["sentinel-2-l2a", "landsat-c2-l2"]
+    assert isinstance(result["collections"], list)

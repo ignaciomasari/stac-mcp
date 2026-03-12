@@ -1,4 +1,3 @@
-# Minimal debian-based image to leverage manylinux wheels (avoids GDAL mismatch)
 FROM python:3.12-slim AS builder
 
 WORKDIR /app
@@ -8,9 +7,6 @@ RUN apt-get update \
         curl \
         build-essential \
         ca-certificates \
-        gdal-bin \
-        libgdal-dev \
-        libproj-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy project files (include README and LICENSE for packaging metadata)

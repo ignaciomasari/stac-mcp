@@ -1,9 +1,8 @@
+from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
 from stac_mcp.tools.client import STACClient
 from stac_mcp.tools.execution import Session
-
-ASSET_1_SIZE = 1024
 
 
 def test_stac_client_init():
@@ -19,43 +18,23 @@ def test_stac_client_session_dependency():
     assert isinstance(stac_client, STACClient)
 
 
-@patch("stac_mcp.tools.client.STACClient._cached_search")
-def test_estimate_data_size_no_items(mock_cached_search):
-    """Test data size estimation when no items are returned."""
-    mock_cached_search.return_value = []
+def test_list_collection_keywords():
+    """Test list_collection_keywords returns keywords or description fallback."""
+    col_with_kw = SimpleNamespace(
+        id="col-a", keywords=["climate", "temperature"], description="Full desc.", title="Col A"
+    )
+    col_with_desc = SimpleNamespace(
+        id="col-b", keywords=None, description="Ocean color data. More details.", title="Col B"
+    )
+    col_bare = SimpleNamespace(
+        id="col-c", keywords=None, description=None, title="Col C"
+    )
+
     client = STACClient()
-    result = client.estimate_data_size(collections=["test"])
-    assert result["item_count"] == 0
-    assert result["estimated_size_bytes"] == 0
+    client._client = MagicMock()  # noqa: SLF001
+    client._client.get_collections.return_value = [col_with_kw, col_with_desc, col_bare]
 
-
-@patch("stac_mcp.tools.client.STACClient._cached_search")
-def test_estimate_data_size_with_metadata(mock_cached_search):
-    """Test data size estimation using metadata."""
-    client = STACClient()
-    mock_item = MagicMock()
-    mock_item.assets = {"asset1": {"extra_fields": {"file:size": ASSET_1_SIZE}}}
-    mock_cached_search.return_value = [mock_item]
-
-    result = client.estimate_data_size(collections=["test"])
-    assert result["estimated_size_bytes"] == ASSET_1_SIZE
-
-
-@patch("stac_mcp.tools.client.STACClient._cached_search")
-def test_estimate_data_size_with_head_request(mock_cached_search):
-    """Test data size estimation using HEAD requests."""
-    client = STACClient()
-    mock_item = MagicMock()
-    asset_size = 2048
-    mock_item.assets = {
-        "asset1": {"href": "http://test.com/asset1.tif", "media_type": "image/tiff"}
-    }
-    mock_cached_search.return_value = [mock_item]
-
-    with patch.object(
-        client._head_session,  # noqa: SLF001
-        "request",
-        return_value=MagicMock(headers={"Content-Length": str(asset_size)}),
-    ):
-        result = client.estimate_data_size(collections=["test"])
-        assert result["estimated_size_bytes"] == asset_size
+    result = client.list_collection_keywords()
+    assert result["col-a"] == ["climate", "temperature"]
+    assert result["col-b"] == "Ocean color data"
+    assert result["col-c"] == "Col C"

@@ -29,47 +29,42 @@ def preprocess_parameters(arguments: dict[str, Any]) -> dict[str, Any]:
     if "bbox" in processed and processed["bbox"] is not None:
         bbox = processed["bbox"]
         if isinstance(bbox, str):
+            parsed_bbox = None
             try:
-                # Try to parse as JSON
                 parsed = json.loads(bbox)
                 if isinstance(parsed, list) and len(parsed) == 4:  # noqa: PLR2004
-                    processed["bbox"] = [float(x) for x in parsed]
-                    logger.debug(
-                        "Converted bbox from string to list: %s", processed["bbox"]
-                    )
-            except (json.JSONDecodeError, ValueError, TypeError) as e:
-                logger.warning("Failed to parse bbox string: %s, error: %s", bbox, e)
+                    parsed_bbox = [float(x) for x in parsed]
+            except (json.JSONDecodeError, ValueError, TypeError):
+                pass
+            if parsed_bbox is None:
+                try:
+                    parts = [p.strip() for p in bbox.split(",")]
+                    if len(parts) == 4:  # noqa: PLR2004
+                        parsed_bbox = [float(x) for x in parts]
+                except (ValueError, TypeError):
+                    logger.warning("Failed to parse bbox string: %s", bbox)
+            if parsed_bbox is not None:
+                processed["bbox"] = parsed_bbox
+                logger.debug("Converted bbox from string to list: %s", parsed_bbox)
 
     # Handle collections parameter - should be a list of strings
     if "collections" in processed and processed["collections"] is not None:
         collections = processed["collections"]
         if isinstance(collections, str):
+            parsed_collections = None
             try:
                 parsed = json.loads(collections)
                 if isinstance(parsed, list):
-                    processed["collections"] = parsed
-                    logger.debug(
-                        "Converted collections from string to list: %s",
-                        processed["collections"],
-                    )
-            except (json.JSONDecodeError, ValueError, TypeError) as e:
-                logger.warning(
-                    "Failed to parse collections string: %s, error: %s", collections, e
-                )
-
-    # Handle aoi_geojson parameter - should be a dict/object
-    if "aoi_geojson" in processed and processed["aoi_geojson"] is not None:
-        aoi = processed["aoi_geojson"]
-        if isinstance(aoi, str):
-            try:
-                parsed = json.loads(aoi)
-                if isinstance(parsed, dict):
-                    processed["aoi_geojson"] = parsed
-                    logger.debug("Converted aoi_geojson from string to dict")
-            except (json.JSONDecodeError, ValueError, TypeError) as e:
-                logger.warning(
-                    "Failed to parse aoi_geojson string: %s, error: %s", aoi, e
-                )
+                    parsed_collections = parsed
+            except (json.JSONDecodeError, ValueError, TypeError):
+                pass
+            if parsed_collections is None:
+                parsed_collections = [c.strip() for c in collections.split(",") if c.strip()]
+            processed["collections"] = parsed_collections
+            logger.debug(
+                "Converted collections from string to list: %s",
+                parsed_collections,
+            )
 
     # Handle query parameter - should be a dict/object
     if "query" in processed and processed["query"] is not None:

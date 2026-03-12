@@ -22,20 +22,17 @@ def test_client_init_with_defaults():
     with patch("pystac_client.Client.open", return_value=MagicMock()):
         client = STACClient()
         assert (
-            client.catalog_url == "https://planetarycomputer.microsoft.com/api/stac/v1"
+            client.catalog_url == "https://stac.eodc.eu/api/v1"
         )
         assert client.headers == {}
 
-        default_timeout = 20
-        default_max_workers = 4
-        default_retries = 1
-        default_backoff_base = 0.05
 
-        assert client.head_timeout_seconds == default_timeout
-        assert client.head_max_workers == default_max_workers
-        assert client.head_retries == default_retries
-        assert client.head_backoff_base == default_backoff_base
-        assert client.head_backoff_jitter is True
+def test_client_init_with_env_var(monkeypatch):
+    """Test STACClient respects STAC_API_URL env var."""
+    monkeypatch.setenv("STAC_API_URL", "https://custom-stac.example.com/v1")
+    with patch("pystac_client.Client.open", return_value=MagicMock()):
+        client = STACClient()
+        assert client.catalog_url == "https://custom-stac.example.com/v1"
 
 
 def test_search_cache_key(client: STACClient):
@@ -48,61 +45,3 @@ def test_search_cache_key(client: STACClient):
         limit=10,
     )
     assert isinstance(key, str)
-
-
-def test_asset_to_dict(client: STACClient):
-    """Test _asset_to_dict."""
-    asset = MagicMock()
-    asset.to_dict.return_value = {"key": "value"}
-    result = client._asset_to_dict(asset)  # noqa: SLF001
-    assert result == {"key": "value"}
-
-    # Test fallback
-    asset.to_dict = None
-    asset.href = "https://example.com"
-    result = client._asset_to_dict(asset)  # noqa: SLF001
-    assert result["href"] == "https://example.com"
-
-    # Test fallback
-    asset.to_dict = None
-    asset.href = "https://example.com"
-    result = client._asset_to_dict(asset)  # noqa: SLF001
-    assert result["href"] == "https://example.com"
-
-
-def test_size_from_metadata(client: STACClient):
-    """Test _size_from_metadata."""
-    file_size = 123
-    asset_obj = {"file:size": file_size}
-    result = client._size_from_metadata(asset_obj)  # noqa: SLF001
-    assert result == file_size
-
-
-@patch("stac_mcp.tools.client.STACClient._head_content_length")
-def test_parallel_head_content_lengths(
-    mock_head_content_length: MagicMock, client: STACClient
-):
-    """Test _parallel_head_content_lengths."""
-    mock_head_content_length.return_value = 123
-    hrefs = ["https://example.com"]
-    result = client._parallel_head_content_lengths(hrefs)  # noqa: SLF001
-    assert result == {"https://example.com": 123}
-
-
-def test_sign_href(client: STACClient):
-    """Test _sign_href."""
-    href = "https://example.com"
-    result = client._sign_href(href)  # noqa: SLF001
-    assert result == href
-
-
-@patch("requests.Session.request")
-def test_head_content_length(mock_request: MagicMock, client: STACClient):
-    """Test _head_content_length."""
-    mock_response = MagicMock()
-    content_length = "123"
-    mock_response.headers = {"Content-Length": content_length}
-    mock_request.return_value = mock_response
-
-    result = client._head_content_length("https://example.com")  # noqa: SLF001
-    assert result == int(content_length)
